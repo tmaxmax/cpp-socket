@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Start" type="CompoundRunConfigurationType">
+    <toRun name="cpp-socket-server" type="CMakeRunConfiguration" />
+    <toRun name="cpp-socket-client" type="CMakeRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
