@@ -7,16 +7,16 @@
 
 int main(int argc, char** argv) {
     try {
-        if (argc < 2) {
-            throw std::runtime_error("Port argument expected!");
+        if (argc < 3) {
+            throw std::runtime_error("IP and Port arguments expected!");
         }
-        auto port = std::stoi(argv[1]);
+        auto port = std::stoi(argv[2]);
         if (port < 0 || port > 65535) {
             throw std::runtime_error("Port too big or too small!");
         }
 
         Client client;
-        client.Connect("127.0.0.1", port);
+        client.Connect(argv[1], port);
 
         auto receive_done = std::async(std::launch::async, [&]() {
             while (true) {
