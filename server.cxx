@@ -1,5 +1,6 @@
 #include "server.hxx"
 
+#include <future>
 #include <stdexcept>
 
 #include "logger.hxx"
@@ -14,7 +15,8 @@ static auto GetClientIPAddress(const Server::ClientConnection& client) -> std::s
     return fmt::format("{}:{}", client_ptr->GetClientAddr(), client_ptr->GetClientPort());
 }
 
-Server::Server() {
+Server::Server()
+    : m_is_listening{false} {
     if (!m_socket.Initialize()) {
         throw std::runtime_error(m_socket.DescribeError());
     }

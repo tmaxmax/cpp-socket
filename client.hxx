@@ -8,6 +8,10 @@
 #include <string>
 #include <string_view>
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#undef SendMessage
+#endif
+
 class Client {
 public:
     Client();

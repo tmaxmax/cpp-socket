@@ -7,11 +7,14 @@
 #include <atomic>
 #include <forward_list>
 #include <functional>
-#include <future>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <utility>
+#include <vector>
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#undef SendMessage
+#endif
 
 class Server {
 public:
