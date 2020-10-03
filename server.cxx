@@ -1,7 +1,6 @@
 #include "server.hxx"
 
 #include <stdexcept>
-#include <utility>
 
 #include "logger.hxx"
 
