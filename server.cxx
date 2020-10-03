@@ -54,7 +54,7 @@ private:
 };
 
 auto Server::Listen(std::uint16_t port) -> void {
-    if (!m_socket.Listen("127.0.0.1", port)) {
+    if (!m_socket.Listen("0.0.0.0", port)) {
         throw std::runtime_error(m_socket.DescribeError());
     }
     m_is_listening = true;
