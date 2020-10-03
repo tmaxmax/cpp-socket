@@ -21,6 +21,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "client.hxx;serve
 find_package(Threads)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} wsock32 ws2_32)
+endif ()
+
 find_package(fmt)
 target_link_libraries(${PROJECT_NAME} fmt::fmt)
 
@@ -28,8 +32,8 @@ find_library(CLSOCKET clsocket)
 target_link_libraries(${PROJECT_NAME} clsocket)
 
 install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 file(GLOB files "cmd/*.cxx")
 foreach (file ${files})
