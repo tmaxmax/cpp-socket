@@ -6,10 +6,10 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <mutex>
 #include <span>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include <arpa/inet.h>
@@ -186,10 +186,11 @@ Server::Server(unsigned short port)
     : m(new Server::Private{.fd = create_server_fd(port), .next_id = 0}) {}
 
 void Server::remove(const ServerClient& c) {
-    auto to_remove = std::remove_if(
-        std::begin(m->clients), std::end(m->clients),
-        [&c](const ServerClient& other) { return c.id() == other.id(); });
-    m->clients.erase(to_remove, std::end(m->clients));
+    auto to_remove =
+        std::remove_if(m->clients.begin(), m->clients.end(), [&c](const ServerClient& other) {
+            return c.id() == other.id();
+        });
+    m->clients.erase(to_remove, m->clients.end());
 }
 
 static int accept_client_fd(int server_fd, sockaddr_storage* addr) {
@@ -228,10 +229,11 @@ void Server::poll(std::vector<ServerPollResult>& res) {
             ServerPollResult res_one{.client = c, .status = ServerClientStatus::New};
             res.push_back(res_one);
         } else {
-            const auto it = std::find_if(
-                std::begin(m->clients), std::end(m->clients),
-                [&p](const ServerClient& c) { return c.m->fd == p.fd; });
-            if (it == std::end(m->clients)) {
+            const auto it =
+                std::find_if(m->clients.begin(), m->clients.end(), [&p](const ServerClient& c) {
+                    return c.m->fd == p.fd;
+                });
+            if (it == m->clients.end()) {
                 throw std::logic_error("a removed client was polled");
             }
             ServerPollResult res_one{.client = *it, .status = ServerClientStatus::PendingData};
