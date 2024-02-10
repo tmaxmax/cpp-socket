@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 
+#include "common.h"
 #include "protocol.h"
 #include "socket.h"
 
@@ -18,24 +19,27 @@ int main(int argc, char** argv) try {
     const unsigned short port = std::stoul(argv[2]);
 
     Client client(argv[1], port);
-    std::vector<std::byte> msg;
+    std::vector<std::byte> buf;
 
     for (std::string s; std::getline(std::cin, s);) {
-        pack_string(s, msg);
-        client.send(msg);
+        ClientRegistration msg;
+        msg.user_name = s;
+        send_message(&client, &msg, buf);
 
-        std::vector<std::byte> data(sizeof s.size());
-        if (!client.recv(data)) {
-            break;
-        }
-        const auto len = parse_len(data);
-        data.resize(len);
-        if (!client.recv(data)) {
-            break;
+        const auto received = recv_message(&client, buf);
+        if (!received.is_connected) {
+            std::cerr << "Server closed.\n";
+            return 0;
+        } else if (received.message == nullptr) {
+            std::cerr << "Server sent invalid message (how?).\n";
+            return 0;
         }
 
-        std::cout << as_string(data) << '\n';
+        std::cout << received.message->as<ServerMessage>()->content;
     }
+
+    Disconnect dis;
+    send_message(&client, &dis, buf);
 
     std::cerr << "Done\n";
 

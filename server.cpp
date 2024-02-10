@@ -1,11 +1,14 @@
 #include <cstddef>
 #include <exception>
 #include <future>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "common.h"
 #include "protocol.h"
 #include "socket.h"
 
@@ -19,24 +22,41 @@ int main(int argc, char** argv) try {
 
     Server server(port);
     std::vector<ServerPollResult> clients;
-    std::vector<std::byte> in, out;
+    std::vector<std::byte> buf;
 
     while (true) {
         server.poll(clients);
         for (auto& [client, _] : clients) {
-            in.resize(8);
-            if (!client.recv(in)) {
+            const auto received = recv_message(&client, buf);
+            if (!received.is_connected) {
+                std::cerr << "Client " << client.id() << " disconnected\n";
                 server.remove(client);
                 continue;
             }
-            in.resize(parse_len(in));
-            if (!client.recv(in)) {
+            if (received.message == nullptr) {
+                std::cerr << "Client " << client.id() << " sent an invalid message\n";
+                continue;
+            }
+
+            if (const auto m = received.message->as<ClientRegistration>(); m != nullptr) {
+                std::cerr << "Client " << client.id() << " sent: " << m->user_name << '\n';
+
+                std::ostringstream ss;
+                ss << "You sent: " << std::quoted(m->user_name) << ".\nGive me something new: ";
+
+                ServerMessage msg;
+                msg.content = ss.str();
+
+                send_message(&client, &msg, buf);
+                continue;
+            }
+            if (const auto m = received.message->as<Disconnect>(); m != nullptr) {
+                std::cerr << "Client " << client.id() << " disconnected.\n";
                 server.remove(client);
                 continue;
             }
-            std::cout << "Received: " << as_string(in) << '\n';
-            pack_string(as_string(in), out);
-            client.send(out);
+
+            std::cerr << "Client " << client.id() << " sent an unhandled message type.\n";
         }
     }
 } catch (const std::exception& e) {
