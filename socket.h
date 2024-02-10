@@ -54,7 +54,29 @@ public:
     ~Server();
 };
 
-class ServerClient {
+class Receiver {
+protected:
+    virtual ~Receiver() = default;
+
+public:
+    // Receives exactly res.size() bytes from the client, blocking if necessary.
+    // Returns true if the client is still connected, false if it disconnected.
+    // Throws if the receive fails.
+    virtual bool recv(std::vector<std::byte>& res) = 0;
+};
+
+class Sender {
+protected:
+    virtual ~Sender() = default;
+
+public:
+    // Send the given bytes to the client.
+    // It is ensured that all bytes are sent.
+    // Throws if the send doesn't succeed.
+    virtual void send(std::span<const std::byte>) = 0;
+};
+
+class ServerClient : public Receiver, public Sender {
 private:
     struct Private;
     std::shared_ptr<Private> m;
@@ -73,14 +95,8 @@ public:
     ServerClient(ServerClient&&) = default;
     ServerClient& operator=(ServerClient&&) = default;
 
-    // Send the given bytes to the client.
-    // It is ensured that all bytes are sent.
-    // Throws if the send doesn't succeed.
-    void send(std::span<const std::byte>);
-    // Receives exactly res.size() bytes from the client, blocking if necessary.
-    // Returns true if the client is still connected, false if it disconnected.
-    // Throws if the receive fails.
-    bool recv(std::vector<std::byte>& res);
+    void send(std::span<const std::byte>) override;
+    bool recv(std::vector<std::byte>& res) override;
 
     // Returns an unique ID associated with this client, given by the server.
     // It is useful because multiple clients can have the same IP address.
@@ -100,7 +116,7 @@ struct ServerPollResult {
     ServerClientStatus status;
 };
 
-class Client {
+class Client : public Receiver, public Sender {
 private:
     int m_fd;
 
@@ -115,14 +131,8 @@ public:
     Client(Client&&) = default;
     Client& operator=(Client&&) = default;
 
-    // Sends the given bytes to the server.
-    // It is ensured that all bytes are sent.
-    // Throws if the send doesn't succeed.
-    void send(std::span<const std::byte>);
-    // Receives exactly res.size() bytes from the server, blocking if necessary.
-    // Returns true if the connection to the server is still established, false otherwise.
-    // Throws if the receive fails.
-    bool recv(std::vector<std::byte>& res);
+    void send(std::span<const std::byte>) override;
+    bool recv(std::vector<std::byte>& res) override;
 
     // Closes the connection to the server.
     // Multiple calls to close() will throw an error.
