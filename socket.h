@@ -89,9 +89,11 @@ public:
     void send(std::span<const std::byte>) override;
     bool recv(std::vector<std::byte>& res) override;
 
+    using ID = std::size_t;
+
     // Returns an unique ID associated with this client, given by the server.
     // It is useful because multiple clients can have the same IP address.
-    std::size_t id() const noexcept;
+    ID id() const noexcept;
     // Returns the IP address of the client.
     std::string address() const noexcept;
 

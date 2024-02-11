@@ -137,13 +137,13 @@ static bool recv_data(int fd, std::vector<std::byte>& res) {
 
 struct ServerClient::Private {
     int fd;
-    std::size_t id;
+    ServerClient::ID id;
     sockaddr_storage addr;
 };
 
 ServerClient::ServerClient(ServerClient::Private* p) : m(p) {}
 
-std::size_t ServerClient::id() const noexcept { return m->id; }
+ServerClient::ID ServerClient::id() const noexcept { return m->id; }
 
 std::string ServerClient::address() const noexcept {
     char buf[INET6_ADDRSTRLEN];
