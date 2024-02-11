@@ -64,11 +64,6 @@ struct ClientRegistration : public Message {
     bool unpack(std::span<const std::byte>) noexcept override;
 };
 
-struct RegistrationSuccess : public Message {
-    void pack(std::vector<std::byte>&) const override;
-    bool unpack(std::span<const std::byte>) noexcept override;
-};
-
 struct Disconnect : public Message {
     void pack(std::vector<std::byte>&) const override;
     bool unpack(std::span<const std::byte>) noexcept override;

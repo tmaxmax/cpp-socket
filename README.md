@@ -37,7 +37,6 @@ Going further, there are 4 message kinds:
 1. `ClientMessage` – a private/public message from a client,
 1. `ServerMessage` – any message sent from the server to the client,
 1. `ClientRegistration` – messages from the client with the user name it wishes to identify itself; sent when the client connects to the server,
-1. `RegistrationSuccess` – sent by the server to the client when registering succeeded,
 1. `Disconnect` – sent by the client when it leaves the chat.
 
 The `ClientMessage` body has the format:
@@ -51,7 +50,7 @@ The `ServerMessage` body has the format:
 The `ClientRegistration` body has the format:
 1. A string with the user name desired by the client.
 
-`RegistrationSuccess` and `Disconnect` have no body.
+`Disconnect` has no body.
 
 Note that the wire protocol does not concern itself with input validation. This is the server's responsibility. Also note that it does not carry the user name of the message sender – the server can determine it.
 

@@ -83,7 +83,6 @@ enum Code : uint8_t {
     CodeClientMessage,
     CodeServerMessage,
     CodeClientRegistration,
-    CodeRegistrationSuccess,
     CodeDisconnect
 };
 
@@ -99,7 +98,6 @@ std::optional<Code> unpack_code(std::span<const std::byte>& in) noexcept {
     case CodeClientMessage:
     case CodeServerMessage:
     case CodeClientRegistration:
-    case CodeRegistrationSuccess:
     case CodeDisconnect:
         in = in.subspan(1);
 
@@ -145,9 +143,6 @@ std::optional<Header> Header::parse(std::span<const std::byte> input) {
         break;
     case CodeClientRegistration:
         h.message = std::unique_ptr<Message>{new ClientRegistration()};
-        break;
-    case CodeRegistrationSuccess:
-        h.message = std::unique_ptr<Message>{new RegistrationSuccess()};
         break;
     case CodeDisconnect:
         h.message = std::unique_ptr<Message>{new Disconnect()};
@@ -259,10 +254,3 @@ void Disconnect::pack(std::vector<std::byte>& out) const {
 }
 
 bool Disconnect::unpack(std::span<const std::byte>) noexcept { return true; }
-
-void RegistrationSuccess::pack(std::vector<std::byte>& out) const {
-    pack_start(CodeRegistrationSuccess, out);
-    pack_end(out);
-}
-
-bool RegistrationSuccess::unpack(std::span<const std::byte>) noexcept { return true; }
