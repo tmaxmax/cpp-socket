@@ -19,40 +19,11 @@ Multiple clients connect to a server. Here is the flow of a session:
 
 ## Wire protocol
 
-On the wire, a message is formed of:
-1. A header of fixed length,
-1. A body of variable length, limited though to 4096 bytes for security.
-
-Here's the header format:
-1. Message code – 1 byte, used to identify the message type,
-1. Message size – 8 bytes, the size of the entire message excluding the header.
-
-Before describing the messages, it is helpful to first describe how strings are sent on the wire. A string in wire format is:
-1. Its length – 8 bytes,
+The client and the server communicate with each other through plain strings. A string is serialized as follows:
+1. Its length – 8 bytes, limited to 4096;
 1. The string's data – as many as the length specifies.
 
-There is no limit imposed on the length of a string as the whole body is limited anyway.
-
-Going further, there are 4 message kinds:
-1. `ClientMessage` – a private/public message from a client,
-1. `ServerMessage` – any message sent from the server to the client,
-1. `ClientRegistration` – messages from the client with the user name it wishes to identify itself; sent when the client connects to the server,
-1. `Disconnect` – sent by the client when it leaves the chat.
-
-The `ClientMessage` body has the format:
-1. A boolean (1 byte) specifying whether the message is private or public,
-1. If the message is private, a string (as described above) with the desired user name,
-1. A string with the message content.
-
-The `ServerMessage` body has the format:
-1. A string with the message content.
-
-The `ClientRegistration` body has the format:
-1. A string with the user name desired by the client.
-
-`Disconnect` has no body.
-
-Note that the wire protocol does not concern itself with input validation. This is the server's responsibility. Also note that it does not carry the user name of the message sender – the server can determine it.
+The protocol does not concern itself with parsing these strings – see next chapter.
 
 ## The server
 

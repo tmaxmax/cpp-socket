@@ -1,12 +1,9 @@
 #include <cstddef>
 #include <exception>
 #include <iostream>
-#include <iterator>
 #include <string>
-#include <string_view>
 #include <vector>
 
-#include "common.h"
 #include "protocol.h"
 #include "socket.h"
 
@@ -22,26 +19,40 @@ int main(int argc, char** argv) try {
     std::vector<std::byte> buf;
 
     for (std::string s; std::getline(std::cin, s);) {
-        ClientRegistration msg;
-        msg.user_name = s;
-        send_message(client, msg, buf);
+        proto::pack(s, buf);
+        client.send(buf);
 
-        const auto received = recv_message(client, buf);
-        if (!received.is_connected) {
-            std::cerr << "Server closed.\n";
-            return 0;
-        } else if (received.message == nullptr) {
-            std::cerr << "Server sent invalid message (how?).\n";
+        buf.resize(proto::size_header);
+        if (!client.recv(buf)) {
+            std::cout << "Server closed.\n";
             return 0;
         }
 
-        std::cout << received.message->as<ServerMessage>()->content;
+        const auto maybe_len = proto::unpack_header(buf);
+        if (!maybe_len.has_value()) {
+            std::cout << "Server sent invalid data.\n> ";
+            continue;
+        }
+
+        buf.resize(*maybe_len);
+        if (!client.recv(buf)) {
+            std::cout << "Server closed.\n";
+            return 0;
+        }
+
+        const auto maybe_output = proto::unpack_header(buf);
+        if (!maybe_output.has_value()) {
+            std::cout << "Server sent invalid data.\n> ";
+            continue;
+        }
+
+        std::cout << *maybe_output;
     }
 
-    Disconnect dis;
-    send_message(client, dis, buf);
+    proto::pack("", buf); // disconnect message is empty string
+    client.send(buf);
 
-    std::cerr << "Done\n";
+    std::cout << "Goodbye!\n";
 
 } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
