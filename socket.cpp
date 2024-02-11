@@ -10,10 +10,12 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <sys/fcntl.h>
 #include <vector>
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
 #include <stdlib.h>
@@ -153,6 +155,18 @@ std::string ServerClient::address() const noexcept {
 void ServerClient::send(std::span<const std::byte> data) { send_data(m->fd, data); }
 
 bool ServerClient::recv(std::vector<std::byte>& res) { return recv_data(m->fd, res); }
+
+void ServerClient::set_blocking(bool should_block) {
+    auto flags = fcntl(m->fd, F_GETFL, 0);
+    if (flags == -1) {
+        throw_err("fcntl", strerror(errno));
+    }
+
+    flags = should_block ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+    if (fcntl(m->fd, F_SETFL, flags) == -1) {
+        throw_err("fcntl", strerror(errno));
+    }
+}
 
 void ServerClient::close() {
     if (::close(m->fd) == -1) {

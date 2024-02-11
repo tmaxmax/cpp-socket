@@ -89,6 +89,8 @@ public:
     void send(std::span<const std::byte>) override;
     bool recv(std::vector<std::byte>& res) override;
 
+    void set_blocking(bool should_block);
+
     using ID = std::size_t;
 
     // Returns an unique ID associated with this client, given by the server.
