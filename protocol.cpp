@@ -21,10 +21,10 @@ void proto::pack(std::string_view v, std::vector<std::byte>& out) {
     out.insert(out.end(), v_addr, v_addr + v.size());
 }
 
-const std::size_t proto::size_header = sizeof(uint64_t);
+const std::size_t proto::header_size = sizeof(uint64_t);
 
 std::optional<std::size_t> proto::unpack_header(std::span<const std::byte> in) noexcept {
-    if (in.size() < proto::size_header) {
+    if (in.size() < proto::header_size) {
         return std::nullopt;
     }
 
@@ -34,7 +34,7 @@ std::optional<std::size_t> proto::unpack_header(std::span<const std::byte> in) n
         return std::nullopt;
     }
 
-    in = in.subspan(proto::size_header);
+    in = in.subspan(proto::header_size);
 
     return v;
 }

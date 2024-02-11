@@ -22,7 +22,7 @@ int main(int argc, char** argv) try {
         proto::pack(s, buf);
         client.send(buf);
 
-        buf.resize(proto::size_header);
+        buf.resize(proto::header_size);
         if (!client.recv(buf)) {
             std::cout << "Server closed.\n";
             return 0;
