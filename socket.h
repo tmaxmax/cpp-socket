@@ -2,14 +2,28 @@
 #define TERMCHAT_SOCKET_H
 
 #include <cstddef>
+#include <exception>
 #include <memory>
 #include <span>
 #include <string>
 
 // A set of abstractions over the sockets API. It is not meant to be fully featured
 // but to only support the use-cases of the application.
-//
-// None of the abstractions here are thread-safe – callers should ensure synchronization.
+
+class SocketError : public std::exception {
+private:
+    std::string msg;
+    int code;
+    const char* function;
+
+public:
+    SocketError(const char* fn, const char* info);
+
+    const char* what() const noexcept override { return msg.c_str(); }
+
+    // Whether the error is EWOULDBLOCK/EAGAIN or not.
+    bool would_block() const noexcept;
+};
 
 class ServerClient;
 

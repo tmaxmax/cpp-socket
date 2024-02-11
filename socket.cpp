@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <vector>
 
@@ -26,17 +27,19 @@
 
 #include "socket.h"
 
+SocketError::SocketError(const char* fn, const char* info) : msg(), code(errno), function(fn) {
+    std::ostringstream out;
+    out << fn << ": " << info;
+    msg = std::move(out.str());
+}
+
+bool SocketError::would_block() const noexcept { return code == EAGAIN || code == EWOULDBLOCK; }
+
 struct addrinfo_deleter {
     void operator()(addrinfo* a) { freeaddrinfo(a); }
 };
 
 using AddrInfo = std::unique_ptr<addrinfo, addrinfo_deleter>;
-
-static void throw_err(const char* fn, const char* msg) {
-    std::ostringstream ss;
-    ss << fn << ": " << msg;
-    throw std::runtime_error(ss.str());
-}
 
 AddrInfo get_address_info(const char* ip, unsigned short port) {
     if (port < 1024) {
@@ -56,7 +59,7 @@ AddrInfo get_address_info(const char* ip, unsigned short port) {
 
     addrinfo* result;
     if (int status = getaddrinfo(ip, port_str, &hints, &result); status != 0) {
-        throw_err("getaddrinfo", gai_strerror(status));
+        throw SocketError("getaddrinfo", gai_strerror(status));
     }
 
     return AddrInfo{result};
@@ -76,7 +79,7 @@ static int create_server_fd(unsigned short port) {
         }
 
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) == -1) {
-            throw_err("setsockopt", strerror(errno));
+            throw SocketError("setsockopt", strerror(errno));
         }
 
         if (bind(fd, p->ai_addr, p->ai_addrlen) == -1) {
@@ -93,7 +96,7 @@ static int create_server_fd(unsigned short port) {
 
     constexpr int backlog_size = 10; // could be customizable through constructor param
     if (listen(fd, backlog_size) == -1) {
-        throw_err("listen", strerror(errno));
+        throw SocketError("listen", strerror(errno));
     }
 
     return fd;
@@ -110,7 +113,7 @@ static void send_data(int fd, std::span<const std::byte> data) {
     for (int total = 0, left = data.size(); total < data.size();) {
         const auto n = send(fd, data.subspan(total).data(), left, 0);
         if (n == -1) {
-            throw_err("send", strerror(errno));
+            throw SocketError("send", strerror(errno));
         }
 
         total += n;
@@ -122,7 +125,7 @@ static bool recv_data(int fd, std::vector<std::byte>& res) {
     for (int total = 0, left = res.size(); total < res.size();) {
         const auto n = recv(fd, res.data() + total, left, 0);
         if (n == -1) {
-            throw_err("recv", strerror(errno));
+            throw SocketError("recv", strerror(errno));
         } else if (n == 0) {
             return false;
         }
@@ -159,18 +162,18 @@ bool ServerClient::recv(std::vector<std::byte>& res) { return recv_data(m->fd, r
 void ServerClient::set_blocking(bool should_block) {
     auto flags = fcntl(m->fd, F_GETFL, 0);
     if (flags == -1) {
-        throw_err("fcntl", strerror(errno));
+        throw SocketError("fcntl", strerror(errno));
     }
 
     flags = should_block ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
     if (fcntl(m->fd, F_SETFL, flags) == -1) {
-        throw_err("fcntl", strerror(errno));
+        throw SocketError("fcntl", strerror(errno));
     }
 }
 
 void ServerClient::close() {
     if (::close(m->fd) == -1) {
-        throw_err("close", strerror(errno));
+        throw SocketError("close", strerror(errno));
     }
     m->fd = -1;
 }
@@ -202,7 +205,7 @@ static int accept_client_fd(int server_fd, sockaddr_storage* addr) {
     socklen_t sz = sizeof *addr;
     auto fd = accept(server_fd, (sockaddr*)addr, &sz);
     if (fd == -1) {
-        throw_err("accept", strerror(errno));
+        throw SocketError("accept", strerror(errno));
     }
     return fd;
 }
@@ -218,7 +221,7 @@ void Server::poll(std::span<const ServerClient> to_poll, std::vector<ServerPollR
 
     auto num_ready = ::poll(m->pfd_buf.data(), m->pfd_buf.size(), -1);
     if (num_ready == -1) {
-        throw_err("poll", strerror(errno));
+        throw SocketError("poll", strerror(errno));
     }
 
     for (const auto& p : m->pfd_buf) {
@@ -249,7 +252,7 @@ void Server::poll(std::span<const ServerClient> to_poll, std::vector<ServerPollR
 
 void Server::shutdown() {
     if (::shutdown(m->fd, 2 /* further sends and recvs are disallowed */) == -1) {
-        throw_err("shutdown", strerror(errno));
+        throw SocketError("shutdown", strerror(errno));
     }
     m->fd = -1;
 }
@@ -299,7 +302,7 @@ bool Client::recv(std::vector<std::byte>& res) { return recv_data(m_fd, res); }
 
 void Client::close() {
     if (::close(m_fd) == -1) {
-        throw_err("close", strerror(errno));
+        throw SocketError("close", strerror(errno));
     }
     m_fd = -1;
 }
