@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "protocol.h"
+#include "receive.h"
 #include "socket.h"
 
 int main(int argc, char** argv) try {
@@ -22,31 +23,17 @@ int main(int argc, char** argv) try {
         proto::pack(s, buf);
         client.send(buf);
 
-        buf.resize(proto::header_size);
-        if (!client.recv(buf)) {
+        const auto recv = receive(client, buf);
+        if (!recv.is_connected) {
             std::cout << "Server closed.\n";
             return 0;
         }
-
-        const auto maybe_len = proto::unpack_header(buf);
-        if (!maybe_len.has_value()) {
+        if (!recv.message.has_value()) {
             std::cout << "Server sent invalid data.\n> ";
             continue;
         }
 
-        buf.resize(*maybe_len);
-        if (!client.recv(buf)) {
-            std::cout << "Server closed.\n";
-            return 0;
-        }
-
-        const auto maybe_output = proto::unpack_header(buf);
-        if (!maybe_output.has_value()) {
-            std::cout << "Server sent invalid data.\n> ";
-            continue;
-        }
-
-        std::cout << *maybe_output;
+        std::cout << *recv.message;
     }
 
     proto::pack("", buf); // disconnect message is empty string
