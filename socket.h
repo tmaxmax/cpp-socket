@@ -23,6 +23,8 @@ public:
 
     // Whether the error is EWOULDBLOCK/EAGAIN or not.
     bool would_block() const noexcept;
+    // Whether the error is EBADF or not.
+    bool bad_fd() const noexcept;
 };
 
 class ServerClient;

@@ -34,6 +34,7 @@ SocketError::SocketError(const char* fn, const char* info) : msg(), code(errno),
 }
 
 bool SocketError::would_block() const noexcept { return code == EAGAIN || code == EWOULDBLOCK; }
+bool SocketError::bad_fd() const noexcept { return code == EBADF; }
 
 struct addrinfo_deleter {
     void operator()(addrinfo* a) { freeaddrinfo(a); }
