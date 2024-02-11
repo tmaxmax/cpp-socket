@@ -8,10 +8,10 @@
 #include "protocol.h"
 #include "socket.h"
 
-inline void send_message(Sender* s, const Message* m, std::vector<std::byte>& buf) {
+inline void send_message(Sender& s, const Message& m, std::vector<std::byte>& buf) {
     buf.resize(0);
-    m->pack(buf);
-    s->send(buf);
+    m.pack(buf);
+    s.send(buf);
 }
 
 struct ReceiveResult {
@@ -19,9 +19,9 @@ struct ReceiveResult {
     std::unique_ptr<Message> message;
 };
 
-inline ReceiveResult recv_message(Receiver* r, std::vector<std::byte>& buf) {
+inline ReceiveResult recv_message(Receiver& r, std::vector<std::byte>& buf) {
     buf.resize(Header::size);
-    if (!r->recv(buf)) {
+    if (!r.recv(buf)) {
         return {.is_connected = false};
     }
 
@@ -31,7 +31,7 @@ inline ReceiveResult recv_message(Receiver* r, std::vector<std::byte>& buf) {
     }
 
     buf.resize(header->length);
-    if (!r->recv(buf)) {
+    if (!r.recv(buf)) {
         return {.is_connected = false};
     }
 

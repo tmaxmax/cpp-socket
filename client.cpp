@@ -24,9 +24,9 @@ int main(int argc, char** argv) try {
     for (std::string s; std::getline(std::cin, s);) {
         ClientRegistration msg;
         msg.user_name = s;
-        send_message(&client, &msg, buf);
+        send_message(client, msg, buf);
 
-        const auto received = recv_message(&client, buf);
+        const auto received = recv_message(client, buf);
         if (!received.is_connected) {
             std::cerr << "Server closed.\n";
             return 0;
@@ -39,7 +39,7 @@ int main(int argc, char** argv) try {
     }
 
     Disconnect dis;
-    send_message(&client, &dis, buf);
+    send_message(client, dis, buf);
 
     std::cerr << "Done\n";
 
