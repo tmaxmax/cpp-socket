@@ -27,4 +27,8 @@ The protocol does not concern itself with parsing these strings – see next ch
 
 ## The server
 
+TODO
+
 ## The client
+
+TODO
