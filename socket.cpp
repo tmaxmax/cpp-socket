@@ -178,20 +178,11 @@ ServerClient::~ServerClient() {
 struct Server::Private {
     int fd;
     std::size_t next_id;
-    std::vector<ServerClient> clients;
     std::vector<pollfd> pfd_buf;
 };
 
 Server::Server(unsigned short port)
     : m(new Server::Private{.fd = create_server_fd(port), .next_id = 0}) {}
-
-void Server::remove(const ServerClient& c) {
-    auto to_remove =
-        std::remove_if(m->clients.begin(), m->clients.end(), [&c](const ServerClient& other) {
-            return c.id() == other.id();
-        });
-    m->clients.erase(to_remove, m->clients.end());
-}
 
 static int accept_client_fd(int server_fd, sockaddr_storage* addr) {
     socklen_t sz = sizeof *addr;
@@ -202,12 +193,12 @@ static int accept_client_fd(int server_fd, sockaddr_storage* addr) {
     return fd;
 }
 
-void Server::poll(std::vector<ServerPollResult>& res) {
+void Server::poll(std::span<const ServerClient> to_poll, std::vector<ServerPollResult>& res) {
     res.resize(0);
     m->pfd_buf.resize(0);
 
     m->pfd_buf.push_back(pollfd{.fd = m->fd, .events = POLLIN});
-    for (const auto& c : m->clients) {
+    for (const auto& c : to_poll) {
         m->pfd_buf.push_back(pollfd{.fd = c.m->fd, .events = POLLIN});
     }
 
@@ -225,17 +216,13 @@ void Server::poll(std::vector<ServerPollResult>& res) {
             sockaddr_storage addr;
             const auto fd = accept_client_fd(m->fd, &addr);
             ServerClient c{new ServerClient::Private{.fd = fd, .id = ++m->next_id, .addr = addr}};
-            m->clients.push_back(c);
             ServerPollResult res_one{.client = c, .status = ServerClientStatus::New};
             res.push_back(res_one);
         } else {
             const auto it =
-                std::find_if(m->clients.begin(), m->clients.end(), [&p](const ServerClient& c) {
+                std::find_if(to_poll.begin(), to_poll.end(), [&p](const ServerClient& c) {
                     return c.m->fd == p.fd;
                 });
-            if (it == m->clients.end()) {
-                throw std::logic_error("a removed client was polled");
-            }
             ServerPollResult res_one{.client = *it, .status = ServerClientStatus::PendingData};
             res.push_back(res_one);
         }

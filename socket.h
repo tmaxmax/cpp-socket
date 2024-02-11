@@ -34,18 +34,9 @@ public:
     Server(Server&&) = default;
     Server& operator=(Server&&) = default;
 
-    // Polls the server for new connections and the already existing
-    // connections for data.
-    void poll(std::vector<ServerPollResult>&);
-    // Remove this client from the server.
-    //
-    // The Server keeps inside a registry of all the accepted clients
-    // in order to be able to poll them for data. ServerClients which
-    // have disconnected or should be disconnected must be removed from
-    // the Server's registry aswell. It is not mandatory to call
-    // close() on the ServerClient before – when all references to it
-    // disappear it will be automatically closed.
-    void remove(const ServerClient&);
+    // Polls the server for new connections and the given connections
+    // for data.
+    void poll(std::span<const ServerClient>, std::vector<ServerPollResult>&);
     // Closes the server and prevents any subsequent sends or recvs
     // on any of its ServerClients.
     // Multiple calls to shutdown() will throw an error.
