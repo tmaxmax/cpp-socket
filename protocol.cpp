@@ -34,8 +34,6 @@ std::optional<std::size_t> proto::unpack_header(std::span<const std::byte> in) n
         return std::nullopt;
     }
 
-    in = in.subspan(proto::header_size);
-
     return v;
 }
 
@@ -47,8 +45,6 @@ proto::unpack(std::span<const std::byte> in, std::size_t expected_len) noexcept 
 
     const auto addr = reinterpret_cast<const char*>(in.data());
     std::string s(addr, addr + expected_len);
-
-    in = in.subspan(expected_len);
 
     return s;
 }
