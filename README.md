@@ -2,6 +2,8 @@
 
 The group chat of your family! Runs on localhost through TCP.
 
+[See demo.](https://youtu.be/MmwF57dfHaE)
+
 ## General design
 
 Multiple clients connect to a server. Here is the flow of a session:
