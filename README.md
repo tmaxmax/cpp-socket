@@ -29,8 +29,23 @@ The protocol does not concern itself with parsing these strings – see next ch
 
 ## The server
 
-TODO
+The server handles the following:
+- accepting new clients and handling client messages
+- rendering the UI for each client (i.e. building the text the client sees on-screen, kind of how a server builds HTML)
+- dispatching messages to the right clients
+
+The philosophy behind is similar to the one behind a classic server-driven website: dumb client, all the state is managed on the server (the thinking HTMX wants to revive). The actions a client can take are determined on the server – this is why we don't need to define distinct wire formats for each message type (user name selection, private message, public message). The server interprets each message according to the state the client is in:
+- when the client hasn't yet chosen its user name they can't send messages to other clients – if they send a payload which would be a valid message it is still interpreted as if it was a user name
+- conversely, after the user name is chosen, all payloads are interpreted as either private or public messages – the user name can't be set anymore.
+
+From a technical standpoint, the server runs on a single thread and uses `poll` calls to determine which clients have sent payloads. An in-memory registry is used to track the state of each client. Errors are also closely watched – if communication with a client fails, it is removed from the registry and a message is broadcasted to the other clients, announcing that someone was abruptly disconnected.
+
+Please watch the demo to see how the interface looks like.
 
 ## The client
 
-TODO
+The client is very basic. Given that the server basically generates the UI, all that the client has to do is:
+- read the user input and send it to the server
+- receive data from the server and print it on the screen
+
+These two tasks are executed in their own threads. If the server is closed, the client is prompted to quit. If the client exists (i.e. closes stdin), a disconnect message is sent to the server so that other clients are notified.
